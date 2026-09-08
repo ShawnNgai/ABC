@@ -1,0 +1,12 @@
+CREATE TABLE `tenants` (`id` text PRIMARY KEY NOT NULL, `name` text NOT NULL, `region` text DEFAULT 'us' NOT NULL, `deployment_tier` text DEFAULT 'shared' NOT NULL, `created_at` integer NOT NULL);
+CREATE TABLE `users` (`id` text PRIMARY KEY NOT NULL, `tenant_id` text NOT NULL, `email` text NOT NULL, `display_name` text NOT NULL, `role` text DEFAULT 'lawyer' NOT NULL, `bar_number` text, `jurisdiction` text, `created_at` integer NOT NULL, FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`));
+CREATE TABLE `matters` (`id` text PRIMARY KEY NOT NULL, `tenant_id` text NOT NULL, `owner_id` text NOT NULL, `name` text NOT NULL, `matter_type` text NOT NULL, `status` text DEFAULT 'active' NOT NULL, `visibility` text DEFAULT 'private' NOT NULL, `created_at` integer NOT NULL, FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`), FOREIGN KEY (`owner_id`) REFERENCES `users`(`id`));
+CREATE TABLE `files` (`id` text PRIMARY KEY NOT NULL, `tenant_id` text NOT NULL, `matter_id` text, `uploaded_by` text NOT NULL, `object_key` text NOT NULL, `file_name` text NOT NULL, `content_type` text NOT NULL, `processing_status` text DEFAULT 'queued' NOT NULL, `created_at` integer NOT NULL, FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`), FOREIGN KEY (`matter_id`) REFERENCES `matters`(`id`), FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`));
+CREATE TABLE `conversations` (`id` text PRIMARY KEY NOT NULL, `tenant_id` text NOT NULL, `matter_id` text, `created_by` text NOT NULL, `mode` text DEFAULT 'consult' NOT NULL, `model_route` text NOT NULL, `created_at` integer NOT NULL, FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`), FOREIGN KEY (`matter_id`) REFERENCES `matters`(`id`), FOREIGN KEY (`created_by`) REFERENCES `users`(`id`));
+CREATE TABLE `audit_events` (`id` text PRIMARY KEY NOT NULL, `tenant_id` text NOT NULL, `actor_id` text NOT NULL, `action` text NOT NULL, `resource_type` text NOT NULL, `resource_id` text, `metadata_json` text, `created_at` integer NOT NULL, FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`), FOREIGN KEY (`actor_id`) REFERENCES `users`(`id`));
+CREATE INDEX `idx_users_tenant` ON `users` (`tenant_id`);
+CREATE INDEX `idx_matters_tenant_owner` ON `matters` (`tenant_id`,`owner_id`);
+CREATE INDEX `idx_files_matter` ON `files` (`matter_id`);
+CREATE INDEX `idx_conversations_matter` ON `conversations` (`matter_id`);
+CREATE INDEX `idx_audit_tenant_created` ON `audit_events` (`tenant_id`,`created_at`);
+
